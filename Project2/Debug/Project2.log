@@ -1,23 +1,2 @@
 ﻿  main.cpp
-c:\users\dr. thrax\source\repos\project2\project2\main.cpp(63): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-c:\users\dr. thrax\source\repos\project2\project2\main.cpp(81): warning C4244: '=': conversion from 'float' to 'T', possible loss of data
-          with
-          [
-              T=int
-          ]
-c:\users\dr. thrax\source\repos\project2\project2\main.cpp(82): warning C4244: '=': conversion from 'float' to 'T', possible loss of data
-          with
-          [
-              T=int
-          ]
-c:\users\dr. thrax\source\repos\project2\project2\main.cpp(86): warning C4244: '=': conversion from 'float' to 'T', possible loss of data
-          with
-          [
-              T=int
-          ]
-c:\users\dr. thrax\source\repos\project2\project2\main.cpp(87): warning C4244: '=': conversion from 'float' to 'T', possible loss of data
-          with
-          [
-              T=int
-          ]
   Project2.vcxproj -> C:\Users\Dr. Thrax\source\repos\Project2\Debug\Project2.exe

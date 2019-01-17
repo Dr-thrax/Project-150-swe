@@ -1,0 +1,165 @@
+#include <sfml\Graphics.hpp>
+#include <SFML\Audio.hpp>
+#include <iostream>
+#include <math.h>
+
+
+
+int main() {
+	sf::RenderWindow window(sf::VideoMode(1480, 720), "Game beta", sf::Style::Close | sf::Style::Titlebar | sf::Style::Resize);
+	sf::RectangleShape rectangle(sf::Vector2f(72.0f, 10.0f));
+	sf::RectangleShape bar(sf::Vector2f(10.0f, 720.0f));
+	sf::RectangleShape scorebar(sf::Vector2f(190.0f, 720.0f));
+	sf::CircleShape ball(10.0f, 1000);
+	
+	
+	float paddleratio = 1.0f;
+	if (paddleratio > 1.0f || paddleratio < 0.0f) paddleratio = 1.0f;
+	
+
+	bool gameover = false;
+
+
+	rectangle.setPosition((640.0f - 72.0f), (710.0f));
+	bar.setPosition(1281.0f, 0.0f);
+	scorebar.setPosition(1291.0f, 0.0f);
+	
+
+	sf::Texture playerTexture;
+	float ballx = 0.7f, bally = 0.7f;
+	
+	playerTexture.loadFromFile("paddle.png");
+	rectangle.setTexture(&playerTexture);
+	
+	sf::Texture score;
+	score.loadFromFile("score.jpg");
+	scorebar.setTexture(&score);
+
+	sf::Texture goldbrick;
+	goldbrick.loadFromFile("goldbrick.png");
+	
+
+	sf::Texture over;
+	over.loadFromFile("over.jpg");
+	sf::Sprite ov;
+	ov.setTexture(over);
+	ov.setPosition(sf::Vector2f(0, 0));
+
+
+	
+	// here we are buffering sound
+	sf::SoundBuffer paddlebreak;
+	sf::Sound sound;
+
+	sf::RectangleShape brick1(sf::Vector2f(70.0f, 30.0f));
+	brick1.setPosition(200.0f, 300.0f);
+
+	brick1.setTexture(&goldbrick);
+
+	bool brickl1 = true;
+
+
+	sf::Vector2f scale = rectangle.getScale();
+	rectangle.setScale(scale.x * 1.9, scale.y * 1);
+	int a = 640, b = 360;
+
+	while (window.isOpen()) {
+		sf::Event evnt;
+		while (window.pollEvent(evnt)) {
+			if (evnt.type == sf::Event::Closed) {
+				window.close();
+			}
+		}
+		sf::Vector2f scale2 = rectangle.getScale();
+		sf::Vector2i paddlepos = sf::Mouse::getPosition(window);
+		a = paddlepos.x;
+		
+		window.setMouseCursorVisible(false);
+
+		if (a > 1280 - (scale2.x * 72)) {
+			rectangle.setPosition(1280.0f - (scale2.x * 72), 710.0f);
+			paddlepos.x = 1280.0f - (scale2.x * 72);
+			paddlepos.y = 710.0f;
+		}
+		else if (a < 0) {
+			rectangle.setPosition(0.0f, 710.0f);
+			paddlepos.x = 0.0f;
+			paddlepos.y = 710.0f;
+		}
+		else rectangle.setPosition((float)a, 710.0f);
+
+		sf::Vector2f paddleorg = rectangle.getOrigin();
+
+		sf::Vector2f ballpos = ball.getPosition();
+		if (ballpos.x < 0) {
+			ballx = (-1)*ballx;
+		}
+		if (ballpos.y < 0) {
+			bally = (-1)*bally;
+
+		}
+		if (ballpos.x > 1260) {
+			ballx = (-1)*ballx;
+
+		}
+		if (ballpos.y >= 690 && ((ballpos.x >= paddlepos.x) && (ballpos.x <= paddlepos.x + (scale2.x * 72)))) {
+			
+			if (paddleratio <= 0.5 && paddleratio >= 0.1) {
+				ballx = 1;
+				bally = 1;
+
+
+			}
+
+			std::cout << ballpos.x << " " << ballpos.y << " " << paddleratio << " " << ballx << " " << bally <<std::endl;
+
+			paddlebreak.loadFromFile("boink2.wav");
+			sound.setBuffer(paddlebreak);
+			sound.play();
+
+			paddleratio = (ballpos.x - paddlepos.x) / (scale2.x * 72);
+			std::cout << paddleratio << std::endl;
+		}
+
+		
+
+
+		if (ballpos.y >= 700) {
+			
+			ballx = 0;
+			bally = 0;
+			ballpos.y = 71;
+			ball.setPosition(2000, 79);
+			paddlebreak.loadFromFile("paddlebreak.wav");
+			sound.setBuffer(paddlebreak);
+			sound.play();
+			gameover = true;
+		}
+
+		
+		
+		ball.move(ballx , bally );
+
+		
+		
+		
+		if (ballpos.x >= 200 && ballpos.x <= 272 && ballpos.y >= 300 && ballpos.y <= 310) brickl1 = false;
+			window.clear();
+		if (brickl1) window.draw(brick1);
+		
+		if (!gameover) {
+			window.draw(rectangle);
+			window.draw(ball);
+			window.draw(bar);
+			window.draw(scorebar);
+			}
+			if (gameover)
+				window.draw(ov);
+			window.display(); 
+			
+	}
+
+
+
+	return 0;
+}
