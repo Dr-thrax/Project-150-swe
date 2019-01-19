@@ -17,7 +17,13 @@ constexpr int WindowHeight{ 720 }, WindowWidth{ 950 };
 constexpr  float paddleWidth{ 120.0f }, paddleHeight{ 10.0f }, paddleVelocity{16.f};
 constexpr float blockWidth{ 60.f }, blockHeight{ 20.f };
 constexpr int countBlocksx{ 14 }, countBlocksy{ 4 };
+
+bool isGameOver = false;
+
+
+
 int score{ 0 };
+int level{ 1 };
 
 Music music;
 Music music2;
@@ -32,13 +38,14 @@ Sprite sprite;
 
 
 Text points;
+Text lvltxt;
 Font font;
 
 
 struct Ball
 {
 	CircleShape shape;
-
+	
 	Vector2f velocity{ -ballVelocity,-ballVelocity };
 
 	Ball(float mx, float my)
@@ -47,17 +54,22 @@ struct Ball
 		shape.setRadius(ballRadius);
 		shape.setFillColor(Color::White);
 		shape.setOrigin(ballRadius, ballRadius);
+		shape.setFillColor(Color::Yellow);
 
 	}
 
 	void update() 
 	{
-		shape.move(velocity);
+		if(top() < WindowHeight )shape.move(velocity);
+		else {
+			shape.move(0.f, 0.f);
+			isGameOver = true;
+		}
 
 		if (left() < 0) velocity.x = ballVelocity;
 		else if (right() > WindowWidth) velocity.x = -ballVelocity;
 		if (top() < 0) velocity.y = ballVelocity;
-		else if (bottom() > WindowHeight) velocity.y = -ballVelocity;
+		// else if (bottom() > WindowHeight) velocity.y = -ballVelocity;
 
 		
 	}
@@ -144,16 +156,18 @@ void testCollision(paddle& mpaddle, Ball& mBall)
 	music2.setVolume(100);
 	music2.play();
 
-	if (mBall.x() < mpaddle.x()) mBall.velocity.x = -ballVelocity;
-	else mBall.velocity.x = ballVelocity;
+	if (mBall.x() < mpaddle.x()) mBall.velocity.x = -ballVelocity * (rand()%3+7)/10;
+	else mBall.velocity.x = ballVelocity * (rand()%3+7)/10;
 }
 
 
 void testCollision(Brick& mBrick, Ball& mBall)
 {
+	
 	if (!isIntersecting(mBrick, mBall)) return;
 
 	mBrick.destroyed = true;
+
 	score += 150;
 	music.openFromFile("boink2.wav");
 	music.setVolume(100);
@@ -183,11 +197,14 @@ void testCollision(Brick& mBrick, Ball& mBall)
 
 }
 
-class ParticleSystem : public sf::Drawable, public sf::Transformable
+
+
+
+class ParticleSystem1 : public sf::Drawable, public sf::Transformable
 {
 public:
 
-	ParticleSystem(unsigned int count) :
+	ParticleSystem1(unsigned int count) :
 	m_particles(count),
 	m_vertices(sf::Points, count),
 	m_lifetime(sf::seconds(3.f)),
@@ -217,7 +234,8 @@ public:
 
 			// update the alpha (transparency) of the particle according to its lifetime
 			float ratio = p.lifetime.asSeconds() / m_lifetime.asSeconds();
-			m_vertices[i].color.a = static_cast<sf::Uint8>(ratio * 255);
+			
+			m_vertices[i].color.b = static_cast<sf::Uint8>(ratio * 255);
 		}
 	}
 
@@ -227,6 +245,8 @@ private:
 	{
 		// apply the transform
 		states.transform *= getTransform();
+
+		
 
 		// our particles don't use a texture
 		states.texture = NULL;
@@ -249,7 +269,7 @@ private:
 		float angle = (std::rand() % 360) * 3.14f / 180.f;
 		float speed = (std::rand() % 50) + 50.f;
 		m_particles[index].velocity = sf::Vector2f(std::cos(angle) * speed, std::sin(angle) * speed);
-		m_particles[index].lifetime = sf::milliseconds((std::rand() % 1000) );
+		m_particles[index].lifetime = sf::milliseconds((std::rand() % 500) );
 
 		// reset the position of the corresponding vertex
 		m_vertices[index].position = m_emitter;
@@ -260,6 +280,8 @@ private:
 	sf::Time m_lifetime;
 	sf::Vector2f m_emitter;
 };
+
+
 int main()
 {
 	sf::RenderWindow window(VideoMode(WindowWidth+250, WindowHeight), "Break The Bricks");
@@ -275,21 +297,31 @@ int main()
 			bricks.emplace_back((iX + 1) * (blockWidth + 3) + 22, (iY + 2) * (blockHeight + 3));
 
 	Music game_music;
+	
 	game_music.openFromFile("SONG01.ogg");
 	game_music.setVolume(35);
+	Music gameover_music;
+	gameover_music.openFromFile("Paddlebreak.wav");
+	gameover_music.setVolume(210);
 	game_music.play();
+	
 	loading.loadFromFile("4.png");
 
 	RectangleShape loadingscreen;
 	
+	Vector2f size1;
+	size1.x = 100, size1.y = 100;
 	loadingscreen.setTexture(&loading);
 	loadingscreen.setFillColor(Color::White);
 	loadingscreen.setScale({ 1,1 });
-	loadingscreen.setSize({ 100,100 });
-	loadingscreen.setPosition(1070, 190);
-	loadingscreen.setOrigin({ 50, 50 });
 	
-
+	Sprite gameover;
+	Texture GMtexture;
+	
+	GMtexture.loadFromFile("gameover.png");
+	gameover.setTexture(GMtexture);
+	gameover.setPosition(WindowWidth/2.f -50, WindowHeight/2.f);
+	gameover.setOrigin(202, 180);
 	
 
 
@@ -302,69 +334,218 @@ int main()
 	font.loadFromFile("Impacted.ttf");
 	Vector2u size = texture.getSize();
 	sprite.setTexture(texture);
-	ParticleSystem particles(1000);
+	ParticleSystem1 particles(200);
+	
 	sf::Clock clock;
+	sf::Clock clock2;
+	bool playscreen = false;
 
-	while (true)
+	Text h1,m1,m2,m3;
+	h1.setFont(font);
+	h1.setCharacterSize(100);
+	h1.setPosition(250, 20);
+	h1.setFillColor(Color::Black);
+	h1.setString("BREAK THE BRICKS");
+	h1.setRotation(2);
+	h1.setOutlineThickness(5);
+	h1.setOutlineColor(Color::Yellow);
+	
+	m1.setFont(font);
+	m1.setCharacterSize(70);
+	m1.setPosition(530, 300);
+	m1.setFillColor(Color::Blue);
+	m1.setString("PLAY");
+	m1.setOutlineColor(Color::White);
+	m1.setOutlineThickness(2);
+	m1.Bold;
+
+	m2.setFont(font);
+	m2.setCharacterSize(70);
+	m2.setPosition(530, 400);
+	m2.setFillColor(Color::Blue);
+	m2.setString("EXIT");
+	m2.setOutlineColor(Color::White);
+	m2.setOutlineThickness(2);
+	m2.Bold;
+	
+	while (window.isOpen()) 
 	{
-		 
-		game_music.setLoop(true);
-		window.clear(Color::Black);
 		
+		FloatRect collision2 = m2.getGlobalBounds();
+		FloatRect collision = m1.getGlobalBounds();
+		FloatRect collision3 = h1.getGlobalBounds();
+		
+		Vector2f point;
+		point.x = (float) Mouse::getPosition(window).x;
+		point.y = (float) Mouse::getPosition(window).y;
+		if (collision.contains(point))
+		{
+			m1.setFillColor(Color::Red);
+			if (Mouse::isButtonPressed(Mouse::Button::Left))
+			{
+				playscreen = true;
+				break;
+			}
+		}
+		else
+		{
+			m1.setFillColor(Color::Blue);
+		}
+
+		if (collision2.contains(point))
+		{
+			m2.setFillColor(Color::Red);
+			if (Mouse::isButtonPressed(Mouse::Button::Left))
+			{
+				playscreen = false;
+				break;
+			}
+		}
+		else
+		{
+			m2.setFillColor(Color::Blue);
+		}
+
+		if (collision3.contains(point))
+		{
+			h1.setFillColor(Color::Red);
+			if (Mouse::isButtonPressed(Mouse::Button::Left))
+			{
+				
+			}
+		}
+		else
+		{
+			h1.setFillColor(Color::Black);
+		}
+
+
+		Event event1;
+		while (window.pollEvent(event1))
+		{
+			if (event1.type == Event::Closed)
+				window.close();
+		}
+		window.draw(m2);
+		window.draw(h1);
+		window.draw(m1);
+		window.display();
+		if (Keyboard::isKeyPressed(Keyboard::Key::Enter))
+		{
+			playscreen = true;
+			break;
+		}
+
+	}
+
+	while (playscreen)
+	{
+		Event event;
+		while (window.pollEvent(event))
+		{
+			if (event.type == Event::Closed)
+				window.close();
+		}
 		if (Keyboard::isKeyPressed(Keyboard::Key::Escape)) break;
 
-		sf::Vector2i mouse;
-		mouse.x = (int) ball.shape.getPosition().x;
-		mouse.y = (int)ball.shape.getPosition().y;
-		particles.setEmitter(window.mapPixelToCoords(mouse));
-
-
-
-		ball.update();
-		Paddle.update();
-		testCollision(Paddle, ball);
-		paddleTexture.loadFromFile("paddle.png");
-
-		points.setFont(font);
-		points.setStyle(Text::Bold);
-		points.StrikeThrough;
-		points.setOutlineColor(Color::Black);
-		points.setCharacterSize(60);
-		points.setOutlineThickness(10);
-		points.setPosition(1015, 460);
-		std::stringstream ss;
-		ss <<  score;
-		points.setString(ss.str());
-
-		sf::Time elapsed = clock.restart();
-		particles.update(elapsed);
-		
-		loadingscreen.rotate(4);
-
-		Paddle.shape.setTexture(&paddleTexture);
-		ball.shape.setTexture(&BallTexture);
-		sprite.setPosition(WindowWidth , 0);
-		
-		
 		
 
-		for (auto& brick : bricks) testCollision(brick, ball);
-		bricks.erase(remove_if(begin(bricks), end(bricks), [](const Brick& mBrick) { return mBrick.destroyed; }),
-			end(bricks));
+		if(!isGameOver)
+		{
+			if (!game_music.Playing) game_music.play();
+			 game_music.setLoop(true);
+			 window.clear(Color::Black);
+			 
+			 
+			 sf::Vector2i mouse;
+			 mouse.x = (int)ball.shape.getPosition().x;
+			 mouse.y = (int)ball.shape.getPosition().y;
+			 particles.setEmitter(window.mapPixelToCoords(mouse));
+			 
+			 loadingscreen.setSize(size1);
+			 loadingscreen.setPosition(1070, 190);
+			 loadingscreen.setOrigin({ size1.x / 2, size1.y / 2 });
+			 testCollision(Paddle, ball);
+			 paddleTexture.loadFromFile("paddle.png");
+			 
+			 points.setFont(font);
+			 points.setStyle(Text::Bold);
+			 points.StrikeThrough;
+			 points.setOutlineColor(Color::Black);
+			 points.setCharacterSize(60);
+			 points.setOutlineThickness(10);
+			 points.setPosition(1015, 460);
 
-		for (auto& brick : bricks) brick.shape.setTexture(&brickTexture);
+			 lvltxt.setFont(font);
+			 lvltxt.setStyle(Text::Bold);
+			 lvltxt.setOutlineColor(Color::Black);
+			 lvltxt.setCharacterSize(75);
+			 lvltxt.setOutlineThickness(6);
+			 lvltxt.setPosition(1133, 258);
+			 
+			 std::stringstream ss;
+			 std::stringstream ss2;
+			 ss << score;
+			 ss2 << level;
+			 points.setString(ss.str());
+			 lvltxt.setString(ss2.str());
+			 
+			 ball.update();
+			 Paddle.update();
+			 
+			 
+			 sf::Time elapsed = clock.restart();
+			 particles.update(elapsed);
+			 
+			 loadingscreen.rotate(4);
+			 
+			 Paddle.shape.setTexture(&paddleTexture);
+			 ball.shape.setTexture(&BallTexture);
+			 sprite.setPosition(WindowWidth, 0);
+			 
+			 
+			 
+			 
+			 for (auto& brick : bricks) testCollision(brick, ball);
+			 bricks.erase(remove_if(begin(bricks), end(bricks), [](const Brick& mBrick) { return mBrick.destroyed; }),
+			 	end(bricks));
+			 
+			 for (auto& brick : bricks) brick.shape.setTexture(&brickTexture);
+			 
+			 
+			 
+			 window.draw(ball.shape);
+			 window.draw(Paddle.shape);
+			 for (auto& brick : bricks) window.draw(brick.shape);
+			 window.draw(sprite);
+			 window.draw(points);
+			 window.draw(lvltxt);
+			 window.draw(loadingscreen);
+			 window.draw(particles);
+			 window.display();
+		}
+		else
+		{
+			game_music.stop();
 			
-		
-
-		window.draw(ball.shape);
-		window.draw(Paddle.shape);
-		for (auto& brick : bricks) window.draw(brick.shape);
-		window.draw(sprite);
-		window.draw(points);
-		window.draw(loadingscreen);
-		window.draw(particles);
-		window.display();
+			
+			//gameover.rotate(1);
+			window.draw(gameover);
+			window.display();
+			if (Keyboard::isKeyPressed(Keyboard::Key::Enter))
+			{
+				isGameOver = false;
+				ball.shape.setPosition({(rand()%WindowWidth)/1.f,WindowHeight-100});
+				ball.velocity.y = -ballVelocity;
+				score = 0;
+				for (int iX{ 0 }; iX < countBlocksx; ++iX)
+					for (int iY{ 0 }; iY < countBlocksy; ++iY)
+						bricks.emplace_back((iX + 1) * (blockWidth + 3) + 22, (iY + 2) * (blockHeight + 3));
+			}
+		}
 	}
+
+	
 
 	return 0;
 
