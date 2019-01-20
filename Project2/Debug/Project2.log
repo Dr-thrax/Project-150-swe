@@ -1,2 +1,3 @@
 ﻿  main.cpp
+c:\users\dr. thrax\source\repos\project2\project2\main.cpp(306): warning C4305: 'argument': truncation from 'double' to 'float'
   Project2.vcxproj -> C:\Users\Dr. Thrax\source\repos\Project2\Debug\Project2.exe

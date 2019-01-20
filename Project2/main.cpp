@@ -294,9 +294,16 @@ private:
 
 int main()
 {
+	
 	sf::RenderWindow window(VideoMode(WindowWidth+250, WindowHeight), "Break The Bricks");
 	window.setFramerateLimit(60);
+	window.setMouseCursorVisible(false);
+	Texture texture1;
+	texture1.loadFromFile("cursor.png");
+	Sprite cursor;
+	cursor.setTexture(texture1);	
 
+	cursor.setScale(0.2, 0.2);
 	Ball ball{ WindowWidth / 2,WindowHeight / 2 };
 	paddle Paddle{ WindowWidth / 2.f,WindowHeight - 5.f};
 
@@ -412,7 +419,7 @@ int main()
 			if (Event.type == Event::Closed)
 				window.close();
 		}
-		
+		cursor.setPosition(static_cast<sf::Vector2f>(sf::Mouse::getPosition(window)));
 		
 		FloatRect collision2 = m2.getGlobalBounds();
 		FloatRect collision = m1.getGlobalBounds();
@@ -489,11 +496,13 @@ int main()
 
 		
 		window.clear();
+		
 		window.draw(menuscreen);
 		window.draw(m2);
 		window.draw(h1);
 		window.draw(m3);
 		window.draw(m1);
+		window.draw(cursor);
 		window.display();
 		if (Keyboard::isKeyPressed(Keyboard::Key::Enter))
 		{
@@ -514,7 +523,8 @@ int main()
 		}
 		if (Keyboard::isKeyPressed(Keyboard::Key::Escape)) break;
 
-		
+		cursor.setPosition(static_cast<sf::Vector2f>(sf::Mouse::getPosition(window)));
+
 		stringstream s3;
 		s3 << highscore;
 		hscore.setString(s3.str());
@@ -615,7 +625,7 @@ int main()
 			 window.draw(points);
 			 window.draw(hscore);
 			 window.draw(lvltxt);
-			 
+			 window.draw(cursor);
 			 window.draw(loadingscreen);
 			 window.draw(particles);
 			 window.display();
