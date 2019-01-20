@@ -326,11 +326,16 @@ int main()
 	
 	Sprite gameover;
 	Texture GMtexture;
-	
+	Sprite menuscreen;
+	Texture menuscreent;
 	GMtexture.loadFromFile("gameover.png");
+	menuscreent.loadFromFile("menuscreen.png");
 	gameover.setTexture(GMtexture);
+	menuscreen.setTexture(menuscreent);
 	gameover.setPosition(WindowWidth/2.f -50, WindowHeight/2.f);
+	menuscreen.setPosition(0, 0);
 	gameover.setOrigin(202, 180);
+
 	
 
 
@@ -484,6 +489,7 @@ int main()
 
 		
 		window.clear();
+		window.draw(menuscreen);
 		window.draw(m2);
 		window.draw(h1);
 		window.draw(m3);
