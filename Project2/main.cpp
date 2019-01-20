@@ -5,6 +5,7 @@
 #include <string>
 #include <sstream>
 #include <string> 
+#include <fstream>
 #include <cstdlib>
 
 
@@ -25,6 +26,11 @@ bool isGameOver = false;
 int score{ 0 };
 int level{ 1 };
 int button{ 0 };
+int highscore{ 0 };
+
+
+ofstream file_;
+
 
 Music music;
 Music music2;
@@ -40,6 +46,7 @@ Sprite sprite;
 
 Text points;
 Text lvltxt;
+Text hscore;
 Font font;
 bool stopmusic = false;
 
@@ -378,7 +385,20 @@ int main()
 	m3.setOutlineColor(Color::White);
 	m3.setOutlineThickness(2);
 	m3.Bold;
-	 
+	
+	ifstream readfile;
+	readfile.open("highscore.txt");
+
+	if (readfile.is_open())
+	{
+		while (!readfile.eof())
+		{
+			readfile >> highscore;
+		}
+	}
+
+	readfile.close();
+
 	while (window.isOpen()) 
 	{
 		Event Event;
@@ -479,6 +499,7 @@ int main()
 
 	while (playscreen)
 	{
+		cout << highscore << endl;
 		Event event;
 		while (window.pollEvent(event))
 		{
@@ -488,9 +509,25 @@ int main()
 		if (Keyboard::isKeyPressed(Keyboard::Key::Escape)) break;
 
 		
+		stringstream s3;
+		s3 << highscore;
+		hscore.setString(s3.str());
 
 		if(!isGameOver)
 		{
+			ofstream writefile("highscore.txt");
+			if (writefile.is_open())
+			{
+				if (score > highscore)
+				{
+					highscore = score;
+				}
+
+				writefile << highscore;
+			}
+
+			writefile.close();
+
 			if (!game_music.Playing && !stopmusic) game_music.play();
 			 game_music.setLoop(true);
 			 window.clear(Color::Black);
@@ -516,6 +553,15 @@ int main()
 			 points.setOutlineThickness(10);
 			 points.setPosition(1015, 460);
 
+
+			 hscore.setFont(font);
+			 hscore.setStyle(Text::Bold);
+			 hscore.StrikeThrough;
+			 hscore.setOutlineColor(Color::Black);
+			 hscore.setCharacterSize(60);
+			 hscore.setOutlineThickness(10);
+			 hscore.setPosition(1015, 630);
+
 			 lvltxt.setFont(font);
 			 lvltxt.setStyle(Text::Bold);
 			 lvltxt.setOutlineColor(Color::Black);
@@ -525,6 +571,8 @@ int main()
 			 
 			 std::stringstream ss;
 			 std::stringstream ss2;
+			 
+			 
 			 ss << score;
 			 ss2 << level;
 			 points.setString(ss.str());
@@ -559,7 +607,9 @@ int main()
 			 for (auto& brick : bricks) window.draw(brick.shape);
 			 window.draw(sprite);
 			 window.draw(points);
+			 window.draw(hscore);
 			 window.draw(lvltxt);
+			 
 			 window.draw(loadingscreen);
 			 window.draw(particles);
 			 window.display();
@@ -572,9 +622,15 @@ int main()
 		{
 			game_music.stop();
 			
+
+			
+
+			
+
 			
 			//gameover.rotate(1);
 			window.draw(gameover);
+			window.draw(hscore);
 			window.display();
 			if (Keyboard::isKeyPressed(Keyboard::Key::Enter))
 			{
