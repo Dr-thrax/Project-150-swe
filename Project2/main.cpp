@@ -24,6 +24,7 @@ bool isGameOver = false;
 
 int score{ 0 };
 int level{ 1 };
+int button{ 0 };
 
 Music music;
 Music music2;
@@ -40,6 +41,7 @@ Sprite sprite;
 Text points;
 Text lvltxt;
 Font font;
+bool stopmusic = false;
 
 
 struct Ball
@@ -69,6 +71,7 @@ struct Ball
 		if (left() < 0) velocity.x = ballVelocity;
 		else if (right() > WindowWidth) velocity.x = -ballVelocity;
 		if (top() < 0) velocity.y = ballVelocity;
+		
 		// else if (bottom() > WindowHeight) velocity.y = -ballVelocity;
 
 		
@@ -154,7 +157,7 @@ void testCollision(paddle& mpaddle, Ball& mBall)
 	mBall.velocity.y = -ballVelocity;
 	music2.openFromFile("boink3.wav");
 	music2.setVolume(100);
-	music2.play();
+	if(!stopmusic) music2.play();
 
 	if (mBall.x() < mpaddle.x()) mBall.velocity.x = -ballVelocity * (rand()%3+7)/10;
 	else mBall.velocity.x = ballVelocity * (rand()%3+7)/10;
@@ -171,7 +174,7 @@ void testCollision(Brick& mBrick, Ball& mBall)
 	score += 150;
 	music.openFromFile("boink2.wav");
 	music.setVolume(100);
-	music.play();
+	if(!stopmusic) music.play();
 		
 	float overlapLeft{ mBall.right() - mBrick.left() };
 	float overlapRight{ mBrick.right() - mBall.left() };
@@ -301,9 +304,8 @@ int main()
 	game_music.openFromFile("SONG01.ogg");
 	game_music.setVolume(35);
 	Music gameover_music;
-	gameover_music.openFromFile("Paddlebreak.wav");
-	gameover_music.setVolume(210);
-	game_music.play();
+	
+	if(!stopmusic) game_music.play();
 	
 	loading.loadFromFile("4.png");
 
@@ -361,19 +363,36 @@ int main()
 
 	m2.setFont(font);
 	m2.setCharacterSize(70);
-	m2.setPosition(530, 400);
+	m2.setPosition(530, 500);
 	m2.setFillColor(Color::Blue);
 	m2.setString("EXIT");
 	m2.setOutlineColor(Color::White);
 	m2.setOutlineThickness(2);
 	m2.Bold;
-	
+
+	m3.setFont(font);
+	m3.setCharacterSize(70);
+	m3.setPosition(530, 400);
+	m3.setFillColor(Color::Blue);
+	m3.setString("MUSIC ON");
+	m3.setOutlineColor(Color::White);
+	m3.setOutlineThickness(2);
+	m3.Bold;
+	 
 	while (window.isOpen()) 
 	{
+		Event Event;
+		while (window.pollEvent(Event))
+		{
+			if (Event.type == Event::Closed)
+				window.close();
+		}
+		
 		
 		FloatRect collision2 = m2.getGlobalBounds();
 		FloatRect collision = m1.getGlobalBounds();
 		FloatRect collision3 = h1.getGlobalBounds();
+		FloatRect collision4 = m3.getGlobalBounds();
 		
 		Vector2f point;
 		point.x = (float) Mouse::getPosition(window).x;
@@ -381,7 +400,7 @@ int main()
 		if (collision.contains(point))
 		{
 			m1.setFillColor(Color::Red);
-			if (Mouse::isButtonPressed(Mouse::Button::Left))
+			if (Event.type == Event.MouseButtonReleased && Event.mouseButton.button == Mouse::Left)
 			{
 				playscreen = true;
 				break;
@@ -419,15 +438,35 @@ int main()
 			h1.setFillColor(Color::Black);
 		}
 
-
-		Event event1;
-		while (window.pollEvent(event1))
+		if (collision4.contains(point))
 		{
-			if (event1.type == Event::Closed)
-				window.close();
+			m3.setFillColor(Color::Red);
+			if (Mouse::isButtonPressed(Mouse::Left))
+			{
+				
+					m3.setString("MUSIC OFF");
+					stopmusic = true;
+					game_music.stop();
+			}
+				
+			else if(Mouse::isButtonPressed(Mouse::Right))
+			{
+				m3.setString("MUSIC ON");
+				stopmusic = false;
+				game_music.play();
+			}
 		}
+		else
+		{
+			m3.setFillColor(Color::Blue);
+		}
+
+
+		
+		window.clear();
 		window.draw(m2);
 		window.draw(h1);
+		window.draw(m3);
 		window.draw(m1);
 		window.display();
 		if (Keyboard::isKeyPressed(Keyboard::Key::Enter))
@@ -452,10 +491,11 @@ int main()
 
 		if(!isGameOver)
 		{
-			if (!game_music.Playing) game_music.play();
+			if (!game_music.Playing && !stopmusic) game_music.play();
 			 game_music.setLoop(true);
 			 window.clear(Color::Black);
-			 
+			 gameover_music.openFromFile("Paddlebreak.wav");
+			 gameover_music.setVolume(210);
 			 
 			 sf::Vector2i mouse;
 			 mouse.x = (int)ball.shape.getPosition().x;
@@ -505,8 +545,8 @@ int main()
 			 
 			 
 			 
-			 
 			 for (auto& brick : bricks) testCollision(brick, ball);
+
 			 bricks.erase(remove_if(begin(bricks), end(bricks), [](const Brick& mBrick) { return mBrick.destroyed; }),
 			 	end(bricks));
 			 
@@ -523,6 +563,10 @@ int main()
 			 window.draw(loadingscreen);
 			 window.draw(particles);
 			 window.display();
+			 if(isGameOver && !stopmusic) 
+			 {
+				 gameover_music.play();
+			 }
 		}
 		else
 		{
@@ -534,8 +578,12 @@ int main()
 			window.display();
 			if (Keyboard::isKeyPressed(Keyboard::Key::Enter))
 			{
+				bricks.erase(remove_if(begin(bricks), end(bricks), [](const Brick& mBrick) { return !mBrick.destroyed; }),
+					end(bricks));
+				
 				isGameOver = false;
 				ball.shape.setPosition({(rand()%WindowWidth)/1.f,WindowHeight-100});
+				ball.update();
 				ball.velocity.y = -ballVelocity;
 				score = 0;
 				for (int iX{ 0 }; iX < countBlocksx; ++iX)
