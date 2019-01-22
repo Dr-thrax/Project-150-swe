@@ -295,7 +295,7 @@ private:
 int main()
 {
 	
-	sf::RenderWindow window(VideoMode(WindowWidth+250, WindowHeight), "Break The Bricks");
+	sf::RenderWindow window(VideoMode(WindowWidth+250, WindowHeight), "Break The Bricks",sf::Style::Close);
 	window.setFramerateLimit(60);
 	window.setMouseCursorVisible(false);
 	Texture texture1;
@@ -339,9 +339,9 @@ int main()
 	menuscreent.loadFromFile("menuscreen.png");
 	gameover.setTexture(GMtexture);
 	menuscreen.setTexture(menuscreent);
-	gameover.setPosition(WindowWidth/2.f -50, WindowHeight/2.f);
+	gameover.setPosition(WindowWidth/2.f + 125 , WindowHeight/2.f);
 	menuscreen.setPosition(0, 0);
-	gameover.setOrigin(202, 180);
+	gameover.setOrigin(252, 180);
 
 	
 
@@ -431,6 +431,8 @@ int main()
 		point.y = (float) Mouse::getPosition(window).y;
 		if (collision.contains(point))
 		{
+			m1.setCharacterSize(80);
+
 			m1.setFillColor(Color::Red);
 			if (Event.type == Event.MouseButtonReleased && Event.mouseButton.button == Mouse::Left)
 			{
@@ -440,25 +442,35 @@ int main()
 		}
 		else
 		{
+			m1.setCharacterSize(70);
+
 			m1.setFillColor(Color::Blue);
 		}
 
 		if (collision2.contains(point))
 		{
+			m2.setCharacterSize(80);
+
+
 			m2.setFillColor(Color::Red);
 			if (Mouse::isButtonPressed(Mouse::Button::Left))
 			{
 				playscreen = false;
 				break;
+				
 			}
 		}
 		else
 		{
+			m2.setCharacterSize(70);
+
 			m2.setFillColor(Color::Blue);
 		}
 
 		if (collision3.contains(point))
 		{
+			h1.setCharacterSize(120);
+
 			h1.setFillColor(Color::Red);
 			if (Mouse::isButtonPressed(Mouse::Button::Left))
 			{
@@ -467,11 +479,15 @@ int main()
 		}
 		else
 		{
+			h1.setCharacterSize(100);
+
+
 			h1.setFillColor(Color::Black);
 		}
 
 		if (collision4.contains(point))
 		{
+			m3.setCharacterSize(80);
 			m3.setFillColor(Color::Red);
 			if (Mouse::isButtonPressed(Mouse::Left))
 			{
@@ -479,11 +495,13 @@ int main()
 					m3.setString("MUSIC OFF");
 					stopmusic = true;
 					game_music.stop();
+					
 			}
 				
 			else if(Mouse::isButtonPressed(Mouse::Right))
 			{
 				m3.setString("MUSIC ON");
+				
 				stopmusic = false;
 				game_music.play();
 			}
@@ -491,6 +509,7 @@ int main()
 		else
 		{
 			m3.setFillColor(Color::Blue);
+			m3.setCharacterSize(70);
 		}
 
 
@@ -625,8 +644,9 @@ int main()
 			 window.draw(points);
 			 window.draw(hscore);
 			 window.draw(lvltxt);
-			 window.draw(cursor);
+			 
 			 window.draw(loadingscreen);
+			 window.draw(cursor);
 			 window.draw(particles);
 			 window.display();
 			 if(isGameOver && !stopmusic) 
@@ -643,10 +663,14 @@ int main()
 
 			
 
-			
-			//gameover.rotate(1);
+			window.clear();
+			//gameover.rotate(1.5);
 			window.draw(gameover);
-			window.draw(hscore);
+			
+			if(score == highscore)
+			{
+				window.draw(hscore);
+			}
 			window.display();
 			if (Keyboard::isKeyPressed(Keyboard::Key::Enter))
 			{
@@ -662,6 +686,8 @@ int main()
 					for (int iY{ 0 }; iY < countBlocksy; ++iY)
 						bricks.emplace_back((iX + 1) * (blockWidth + 3) + 22, (iY + 2) * (blockHeight + 3));
 			}
+
+			
 		}
 	}
 
